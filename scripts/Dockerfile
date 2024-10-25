@@ -23,4 +23,4 @@ COPY scripts/deposit.js scripts/
 
 RUN yarn compile
 
-ENTRYPOINT ["node", "./scripts/deposit.js"]
+# ENTRYPOINT ["node", "./scripts/deposit.js"]

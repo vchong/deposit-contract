@@ -14,7 +14,8 @@ const {
   N,
   OFFSET,
   START_BLOCK_NUMBER,
-  SKIP_PREVIOUS_DEPOSITS_CHECK = false,
+  SKIP_PREVIOUS_DEPOSITS_CHECK = 'false',
+  // SKIP_PREVIOUS_DEPOSITS_CHECK = 'true',
   TOKEN_ADDRESS,
   DEPOSIT_CONTRACT_ADDRESS,
 } = process.env
@@ -36,6 +37,7 @@ for (const [envName, value] of Object.entries({
 
 const web3 = new Web3(RPC_URL)
 const { address } = web3.eth.accounts.wallet.add(STAKING_ACCOUNT_PRIVATE_KEY)
+console.log('address', address)
 
 const depositDataFilepath = process.argv[2]
 if (!depositDataFilepath) {
@@ -49,6 +51,8 @@ const n = parseInt(N, 10)
 async function main() {
   const depositContract = new web3.eth.Contract(depositABI, DEPOSIT_CONTRACT_ADDRESS)
   const token = new web3.eth.Contract(abi, TOKEN_ADDRESS)
+  // too verbose
+  // console.log('token', token)
   const deposits = depositData.slice(offset, offset + n)
 
   if (batchSize > 1) {
@@ -68,14 +72,23 @@ async function main() {
   }
 
   const depositAmountBN = web3.utils.toWei(web3.utils.toBN(1))
+  // y need 1 GNO per validator key?
   const totalDepositAmountBN = depositAmountBN.muln(deposits.length)
   const tokenBalance = await token.methods.balanceOf(address).call()
+  console.log('GNO tokenBalance in 18 dp', tokenBalance)
+  // const address2 = "0x<any addr we wanna bal chk>"
+  // console.log('address2', address2)
+  // const tokenBalance2 = await token.methods.balanceOf(address2).call()
+  // console.log('GNO tokenBalance2 in 18 dp', tokenBalance2)
 
   if (web3.utils.toBN(tokenBalance).lt(totalDepositAmountBN)) {
     console.log(`Token balance is not enough to cover all deposits, have ${tokenBalance}, required ${totalDepositAmountBN.toString()}`)
     return
+    // return // ignore bal n proceed - f tstg
   }
 
+  console.log("SKIP_PREVIOUS_DEPOSITS_CHECK", SKIP_PREVIOUS_DEPOSITS_CHECK)
+  // if (false) {
   if (SKIP_PREVIOUS_DEPOSITS_CHECK !== 'true') {
     console.log('Fetching existing deposits')
     const fromBlock = parseInt(START_BLOCK_NUMBER, 10) || 0
